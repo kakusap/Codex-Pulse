@@ -87,6 +87,9 @@ internal static class ClickThroughVerification {
                     dashboard.ToggleClickThrough();
                     await CheckHits(dashboard, samples, true, "resume click-through from tray preference");
 
+                    // Earlier Show/toggle actions can dock the window again. Keep
+                    // the last visible coordinates for the hidden-window check.
+                    samples = Samples(dashboard);
                     dashboard.MinimizeToTray();
                     await Task.Delay(150);
                     Require(!dashboard.Window.IsVisible, "MinimizeToTray must hide the dashboard.");

@@ -1,29 +1,26 @@
-# Local independent data includes Windows-user-encrypted account credentials.
-/data/pulse.db
-/data/pulse.db-*
-/data/compatibility/
-/data/v02-import-report.json
-/data/v02-runtime-report.json
-/data/qa-v02/
-/data/qa-v03/
-/data/qa-dialog-theme/
-/data/before-dialog-theme-*/
-/data/private-accounts/
-/data/profile-backups/
-/data/before-v03-*/
-/data/v03-*.json
-
-/data/qa-independent-cleanup/
-/data/before-independent-cleanup-*/
-/data/qa-v04/
-/data/before-v04-*/
-/data/v04-*.json
-
-# Generated application files and private runtime state.
+# Generated output and private runtime state.
+/artifacts/
 /data/
-/CodexPulse.exe
-/bin/
-/obj/
+**/bin/
+**/obj/
+**/data/
+*.exe
+*.pdb
+*.db
+*.db-*
+
+# IDE and per-user settings.
+.vs/
+.idea/
 *.user
 *.suo
-.vs/
+*.userprefs
+.DS_Store
+Thumbs.db
+
+# Credentials and machine-local configuration.
+.env
+.env.*
+auth.json
+settings.json
+model-prices.json

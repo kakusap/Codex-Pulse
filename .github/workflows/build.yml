@@ -1,0 +1,26 @@
+name: Windows build and verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build Release
+        run: ./build.ps1
+      - name: Verify accounts, usage and switching
+        run: ./scripts/test.ps1 -Suite Core

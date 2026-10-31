@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{31F9BD82-1481-4A51-94A0-D3ED01C036C9}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>CodexPulse</RootNamespace>
+    <AssemblyName>CodexPulse</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <StartupObject>CodexPulse.Program</StartupObject>
+    <FileAlignment>512</FileAlignment>
+    <OutputPath>..\..\artifacts\bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>..\..\artifacts\obj\$(Configuration)\</IntermediateOutputPath>
+    <ApplicationManifest>Resources\app.manifest</ApplicationManifest>
+    <ApplicationIcon>Resources\pulse.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <Optimize>false</Optimize>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <Optimize>true</Optimize>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Application\Program.cs" />
+    <Compile Include="Configuration\Settings.cs" />
+    <Compile Include="Domain\Models\AccountUsage.cs" />
+    <Compile Include="Domain\Models\DailyUsage.cs" />
+    <Compile Include="Domain\Models\KeyUsage.cs" />
+    <Compile Include="Domain\Models\Snapshot.cs" />
+    <Compile Include="Domain\Models\UndatedUsage.cs" />
+    <Compile Include="Features\Accounts\AccountSwitch.cs" />
+    <Compile Include="Features\Accounts\IndependentAccounts.cs" />
+    <Compile Include="Features\Pricing\PriceBook.cs" />
+    <Compile Include="Features\Quota\QuotaSummary.cs" />
+    <Compile Include="Features\Usage\LocalCostSummary.cs" />
+    <Compile Include="Features\Usage\LocalUsage.cs" />
+    <Compile Include="Infrastructure\Codex\CodexRpc.cs" />
+    <Compile Include="Infrastructure\Codex\IndependentRuntime.cs" />
+    <Compile Include="Infrastructure\Codex\ProfileFiles.cs" />
+    <Compile Include="Infrastructure\Codex\RuntimeProbe.cs" />
+    <Compile Include="Infrastructure\DataReader.cs" />
+    <Compile Include="Infrastructure\Persistence\IndependentStore.cs" />
+    <Compile Include="Infrastructure\Persistence\NativeSqlite.cs" />
+    <Compile Include="Infrastructure\Persistence\PulseStore.cs" />
+    <Compile Include="Infrastructure\Persistence\UsageStore.cs" />
+    <Compile Include="Infrastructure\Serialization\Json.cs" />
+    <Compile Include="Infrastructure\Windows\Backdrop.cs" />
+    <Compile Include="Infrastructure\Windows\MonitorDock.cs" />
+    <Compile Include="Infrastructure\Windows\PinInteraction.cs" />
+    <Compile Include="Infrastructure\Windows\StartupRegistration.cs" />
+    <Compile Include="Presentation\Controls\QuotaDetailsPopup.cs" />
+    <Compile Include="Presentation\Controls\QuotaRing.cs" />
+    <Compile Include="Presentation\Controls\TokenHeatmap.cs" />
+    <Compile Include="Presentation\Dashboard\Dashboard.cs" />
+    <Compile Include="Presentation\Theming\DialogTheme.cs" />
+    <Compile Include="Presentation\Theming\Themes.cs" />
+    <Compile Include="Presentation\Windows\CostDetailsWindow.cs" />
+    <Compile Include="Presentation\Windows\IndependentAccountWindow.cs" />
+    <Compile Include="Presentation\Windows\PriceTableWindow.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Presentation\Views\MainWindow.xaml">
+      <LogicalName>MainWindow.xaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Presentation\Theming\DialogTheme.xaml">
+      <LogicalName>DialogTheme.xaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\model-prices.builtin.json">
+      <LogicalName>model-prices.builtin.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\pulse.ico">
+      <Link>pulse.ico</Link>
+      <TargetPath>pulse.ico</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="Resources\app.manifest" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
