@@ -309,11 +309,11 @@ internal static class ClickThroughVerification {
         IntPtr root=GetAncestor(WindowFromPoint(point),2);uint process;GetWindowThreadProcessId(root,out process);
         Require(process==(uint)Process.GetCurrentProcess().Id && root!=new WindowInteropHelper(dashboard.Window).Handle,"Local cost details must remain clickable during native click-through.");
         bool opened=false;
-        dashboard.Window.Dispatcher.BeginInvoke(DispatcherPriority.Background,new Action(delegate {
+        var closeRequest=dashboard.Window.Dispatcher.BeginInvoke(DispatcherPriority.Background,new Action(delegate {
             foreach(Window dialog in Application.Current.Windows) if(dialog.Title=="Codex Pulse · 本机参考费用") {opened=true;dialog.Close();break;}
         }));
         var island=(Window)HwndSource.FromHwnd(root).RootVisual;((Button)island.Content).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Require(opened && dashboard.Window.IsEnabled,"Native local-cost control must open its dialog and restore owner input on close.");
+        Require(closeRequest.Status==DispatcherOperationStatus.Completed && opened && dashboard.Window.IsEnabled,"Native local-cost control must open its dialog and restore owner input on close.");
         report.Add("PASS: local cost details open through the native input island and restore input after closing");
     }
     static async Task CheckUsageFilter(Dashboard dashboard) {

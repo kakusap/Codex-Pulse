@@ -382,7 +382,7 @@ namespace CodexPulse {
                 var item=new MenuItem { Header=key.Name+" · "+key.Status,IsCheckable=true,IsChecked=key.Id==selected };
                 string id=key.Id;item.Click += delegate { if(view.Id=="history") config.SelectedKey=id;else config.SelectedUsageAccount=id;Save();Render(); };menu.Items.Add(item);
             }
-            menu.PlacementTarget=Find<Button>("KeyButton");menu.IsOpen=true;
+            var target=Find<Button>("KeyButton");target.ContextMenu=menu;menu.PlacementTarget=target;menu.IsOpen=true;
         }
         public Window CreateSettingsWindow() {
             var dialog=new Window { Title="Codex Pulse V0.4 设置",ShowInTaskbar=false,Width=570,SizeToContent=SizeToContent.Height,MaxHeight=SystemParameters.WorkArea.Height-60,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterScreen,Owner=Window,Background=Brush(palette.Dialog),Foreground=Brush(ThemePalette.Text),FontFamily=Window.FontFamily,Topmost=Window.Topmost };
