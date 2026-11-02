@@ -32,6 +32,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Security" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
@@ -56,6 +58,7 @@
     <Compile Include="Features\Quota\QuotaSummary.cs" />
     <Compile Include="Features\Usage\LocalCostSummary.cs" />
     <Compile Include="Features\Usage\LocalUsage.cs" />
+    <Compile Include="Features\Updates\AppUpdater.cs" />
     <Compile Include="Infrastructure\Codex\CodexRpc.cs" />
     <Compile Include="Infrastructure\Codex\IndependentRuntime.cs" />
     <Compile Include="Infrastructure\Codex\ProfileFiles.cs" />
@@ -71,6 +74,7 @@
     <Compile Include="Infrastructure\Windows\PinInteraction.cs" />
     <Compile Include="Infrastructure\Windows\OutsideClickDismissal.cs" />
     <Compile Include="Infrastructure\Windows\StartupRegistration.cs" />
+    <Compile Include="Infrastructure\Windows\UpdateInstaller.cs" />
     <Compile Include="Presentation\Controls\QuotaDetailsPopup.cs" />
     <Compile Include="Presentation\Controls\QuotaRing.cs" />
     <Compile Include="Presentation\Controls\TokenHeatmap.cs" />
@@ -80,6 +84,7 @@
     <Compile Include="Presentation\Windows\CostDetailsWindow.cs" />
     <Compile Include="Presentation\Windows\IndependentAccountWindow.cs" />
     <Compile Include="Presentation\Windows\PriceTableWindow.cs" />
+    <Compile Include="Presentation\Windows\UpdateWindow.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

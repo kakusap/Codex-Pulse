@@ -10,6 +10,7 @@
 ./build.ps1
 ./build.ps1 -Configuration Debug
 ./build.ps1 -OutputDirectory ./artifacts/package/CodexPulse
+./scripts/package.ps1
 ```
 
 默认输出到 `artifacts/bin/Release`；Debug 输出到 `artifacts/bin/Debug`。构建会复制托盘图标 `pulse.ico`，内置价格和 XAML 仍嵌入程序资源。
@@ -32,11 +33,12 @@ IDE 构建和脚本构建使用同一份 `.csproj`。新增 C# 文件或嵌入�
 
 | Suite | 覆盖范围 |
 | --- | --- |
-| `Core` | Accounts、Usage、AccountSwitch |
+| `Core` | Accounts、Usage、AccountSwitch、Updates |
 | `Desktop` | Themes、ClickThrough，包含多显示器验证 |
 | `Accounts` | 登录、凭据、缓存、恢复、设置界面及数据兼容 |
 | `Usage` | 官方快照、本机增量记录、日期、计价和费用窗口 |
 | `AccountSwitch` | 切换成功与失败、重复点击、额度弹窗和模拟桌面重启 |
+| `Updates` | 版本、发布来源、SHA256、ZIP 解压、原程序退出、文件替换回滚与重启 |
 | `Themes` | 对话框样式与原生标题栏颜色 |
 | `ClickThrough` | 原生命中、交互区域、热力图和多屏定位 |
 
@@ -48,6 +50,7 @@ IDE 构建和脚本构建使用同一份 `.csproj`。新增 C# 文件或嵌入�
 ./scripts/tests/verify-v03.ps1 -ProbeRuntime
 ./scripts/tests/verify-v04.ps1 -Live -SettingsPath 'C:/YourInstall/data/settings.json'
 ./scripts/tests/verify-clickthrough.ps1 -ProgramPath ./artifacts/bin/Release/CodexPulse.exe
+./scripts/tests/verify-updates.ps1 -Live
 ```
 
 `-Live` 必须显式指定真实安装的设置文件；会复制账号库到隔离目录后查询，不续期复制的凭据、不更改当前登录、不重启 Codex。

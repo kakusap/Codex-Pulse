@@ -2,7 +2,7 @@
 
 Windows 桌面 Codex 额度看板。提供多账号额度查询、账号切换、官方 Token 用量与热力图，以及本机参考费用明细。
 
-当前版本：**V0.4.3**。技术栈：**C# / WPF / .NET Framework 4.8 / Windows x64**。
+当前版本：**V0.4.4**。技术栈：**C# / WPF / .NET Framework 4.8 / Windows x64**。
 
 ## 快速开始
 
@@ -14,6 +14,8 @@ Windows 桌面 Codex 额度看板。提供多账号额度查询、账号切换�
 ```
 
 编译输出包含 `CodexPulse.exe` 和 `pulse.ico`。无需 NuGet 依赖；构建脚本使用 Windows 自带的 .NET Framework 编译器。也可以在安装了 .NET Framework 4.8 开发工具的 Visual Studio 中打开 [CodexPulse.sln](CodexPulse.sln)。
+
+设置或托盘菜单中的“检查更新”可下载并重启升级。默认启动后检查，运行期间每 24 小时检查一次，可在设置中关闭。**v0.4.3 及更早版本需要先手动升级一次**：退出旧版，覆盖程序和图标，保留 `data` 文件夹；之后即可使用应用内更新。
 
 ## 工程结构
 
@@ -51,7 +53,7 @@ Codex-Pulse/
 - [工程架构](docs/architecture.md)：目录职责和代码放置规则。
 - [开发与测试](docs/development.md)：构建、测试、输出目录及资源维护。
 - [模型价格来源](docs/pricing-sources.md)：内置价格的来源与计算口径。
-- [V0.4.3 发布记录](docs/releases/v0.4.3.md) · [V0.4 发布记录](docs/releases/v0.4.md) · [开发路线](docs/development-roadmap.md)。
+- [V0.4.4 发布记录](docs/releases/v0.4.4.md) · [V0.4.3 发布记录](docs/releases/v0.4.3.md) · [开发路线](docs/development-roadmap.md)。
 
 ## 数据与隐私
 

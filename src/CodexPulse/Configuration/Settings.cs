@@ -21,6 +21,7 @@ namespace CodexPulse {
         public bool Topmost = true;
         public bool ClickThroughWhenPinned = true;
         public bool AutoStart = false;
+        public bool AutoCheckUpdates = true;
         public string Theme = "green";
         public int BackgroundOpacity = 85, LayoutVersion = 6;
         public double Left = -1, Top = -1, Width = 560, Height = 56, ExpandedHeight = 730;

@@ -27,6 +27,13 @@ namespace CodexPulse {
         Snapshot latest;
         DispatcherTimer timer;
         DispatcherTimer hoverTimer;
+        DispatcherTimer updateTimer;
+        readonly AppUpdater updater=new AppUpdater();
+        readonly CancellationTokenSource updateCancellation=new CancellationTokenSource();
+        UpdateRelease availableUpdate;
+        UpdateWindow updateWindow;
+        System.Windows.Forms.ToolStripMenuItem trayUpdate;
+        bool checkingUpdates,updateInstalling;
         PinInteraction pinInteraction;
         OutsideClickDismissal outsideClicks;
         PinInteraction accountInteraction,menuInteraction,dragInteraction;
@@ -105,7 +112,7 @@ namespace CodexPulse {
             };
             Window.Closing += delegate(object sender,CancelEventArgs e) {
                 if(!exitRequested) { e.Cancel=true; MinimizeToTray(); return; }
-                closing=true;if(outsideClicks!=null) outsideClicks.Dispose();QuickDetails.Dispose();SystemParameters.StaticPropertyChanged-=OnDesktopChanged;timer.Stop();hoverTimer.Stop();History.SetPassiveHover(false);pinInteraction.Dispose();accountInteraction.Dispose();menuInteraction.Dispose();dragInteraction.Dispose();foreach(var control in detailInteractions) control.Dispose();tray.Visible=false;tray.Dispose();Save();
+                closing=true;updateCancellation.Cancel();if(updateTimer!=null) updateTimer.Stop();if(outsideClicks!=null) outsideClicks.Dispose();QuickDetails.Dispose();SystemParameters.StaticPropertyChanged-=OnDesktopChanged;timer.Stop();hoverTimer.Stop();History.SetPassiveHover(false);pinInteraction.Dispose();accountInteraction.Dispose();menuInteraction.Dispose();dragInteraction.Dispose();foreach(var control in detailInteractions) control.Dispose();tray.Visible=false;tray.Dispose();Save();
             };
             SetupTray(); UpdatePin();
             timer=new DispatcherTimer { Interval=TimeSpan.FromSeconds(5) };
@@ -134,6 +141,8 @@ namespace CodexPulse {
             menu.Items.Add("显示看板（恢复操作）",null,delegate { Show(); });
             menu.Items.Add("展开 / 收起用量详情",null,delegate { Show();ToggleDetails(); });
             menu.Items.Add("切换置顶",null,delegate { TogglePin(); });
+            trayUpdate=(System.Windows.Forms.ToolStripMenuItem)menu.Items.Add("检查更新…",null,delegate { ShowUpdates(); });
+            tray.BalloonTipClicked+=delegate {if(availableUpdate!=null) ShowUpdates();};
             trayClickThrough=(System.Windows.Forms.ToolStripMenuItem)menu.Items.Add("置顶时鼠标穿透",null,delegate { ToggleClickThrough(); });
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             trayExit=menu.Items.Add("退出",null,delegate { if(AccountSwitch.Busy || managingAccounts) { Show();return; } exitRequested=true; Window.Close(); });
@@ -142,6 +151,45 @@ namespace CodexPulse {
         public void MinimizeToTray() { hiddenToTray=true; Window.Hide(); }
         public bool IsRunningInTray { get { return !Window.IsVisible && tray.Visible && !closing && timer.IsEnabled; } }
         public void ExitFromTray() { trayExit.PerformClick(); }
+        public void StartUpdateChecks() {
+            if(updateTimer!=null) return;
+            updateTimer=new DispatcherTimer {Interval=TimeSpan.FromHours(24)};
+            updateTimer.Tick+=async delegate {await CheckUpdatesAutomatically();};
+            Window.Loaded+=async delegate {updateTimer.Start();await CheckUpdatesAutomatically();};
+        }
+        void UpdateReady(UpdateRelease release) {
+            availableUpdate=release.Version>AppUpdater.CurrentVersion?release:null;
+            if(trayUpdate!=null) trayUpdate.Text=availableUpdate==null?"检查更新…":"更新到 v"+availableUpdate.VersionText+"…";
+        }
+        async Task CheckUpdatesAutomatically() {
+            if(checkingUpdates || closing || !config.AutoCheckUpdates) return;
+            checkingUpdates=true;
+            try {
+                var release=await updater.CheckAsync(updateCancellation.Token);
+                if(closing) return;
+                bool changed=release.Version>AppUpdater.CurrentVersion && (availableUpdate==null || availableUpdate.Version!=release.Version);
+                UpdateReady(release);
+                if(changed) tray.ShowBalloonTip(5000,"Codex Pulse 有新版本","v"+release.VersionText+" 已发布，点击查看并更新。",System.Windows.Forms.ToolTipIcon.Info);
+            } catch { /* Automatic checks stay quiet when offline; manual checks explain failures. */ }
+            finally {checkingUpdates=false;}
+        }
+        string UpdateBlocked() {
+            if(closing || updateInstalling) return "正在退出或更新，请稍候。";
+            if(reading || managingAccounts || AccountSwitch.Busy || AccountSwitch.Loading) return "正在刷新或管理账号，请完成后再安装更新。";
+            return null;
+        }
+        void InstallUpdate(PreparedUpdate prepared) {
+            string reason=UpdateBlocked();if(reason!=null) throw new IOException(reason);
+            Save();UpdateInstaller.Launch(prepared);
+            updateInstalling=true;exitRequested=true;Window.Close();
+        }
+        public void ShowUpdates() {
+            if(closing || updateInstalling) return;
+            if(updateWindow!=null) {updateWindow.Window.Activate();return;}
+            var dialog=new UpdateWindow(dialogOwner(),palette,updater,availableUpdate,UpdateReady,UpdateBlocked,InstallUpdate);
+            updateWindow=dialog;
+            try {dialog.Window.ShowDialog();} finally {updateWindow=null;}
+        }
         public bool IsClickThrough { get { return Window.Topmost && config.ClickThroughWhenPinned && !interactionPaused; } }
         public void Show() { Show(true); }
         void Show(bool restoreInteraction) {
@@ -223,7 +271,7 @@ namespace CodexPulse {
             if(latest!=null) Render();
         }
         public async Task Refresh(bool force=false) {
-            if(reading || closing || managingAccounts || (AccountSwitch!=null && AccountSwitch.Busy)) return;
+            if(reading || closing || updateInstalling || managingAccounts || (AccountSwitch!=null && AccountSwitch.Busy)) return;
             reading=true; Find<Button>("RefreshButton").IsEnabled=false;QuickDetails.SetRefreshing(true);
             // Copy config so a settings dialog cannot change paths in the middle of a read.
             try { var input=Json.New().Deserialize<Settings>(Json.New().Serialize(config));latest=await Task.Run(()=>new IndependentAccounts(input).Refresh(force)); if(!closing) { Render();if(QuickDetails.IsOpen && QuickDetails.ActiveSection=="accounts") await AccountSwitch.Refresh(); } }
@@ -394,6 +442,11 @@ namespace CodexPulse {
             DialogTheme.Install(dialog,Window,palette);
             var panel=new StackPanel { Margin=new Thickness(22) };
             dialog.Content=new ScrollViewer { Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled };
+            var updateRow=new WrapPanel {Margin=new Thickness(0,0,0,10)};
+            updateRow.Children.Add(Text("当前版本 v"+AppUpdater.CurrentVersionText,12,ThemePalette.Text));
+            var updateButton=new Button {Content="检查更新",Margin=new Thickness(16,-4,0,0)};updateButton.Click+=delegate {ShowUpdates();};updateRow.Children.Add(updateButton);panel.Children.Add(updateRow);
+            var automaticUpdates=new CheckBox {Content="启动后自动检查新版本（每 24 小时检查一次）",IsChecked=config.AutoCheckUpdates,Margin=new Thickness(0,0,0,18)};
+            panel.Children.Add(automaticUpdates);
             panel.Children.Add(Text("启动与外观",17,ThemePalette.Text));
             var auto=new CheckBox { Content="登录 Windows 后自动启动看板",Foreground=Brush(ThemePalette.Text),FontSize=12,Margin=new Thickness(0,16,0,6) };
             System.Windows.Automation.AutomationProperties.SetName(auto,"开机自启");
@@ -467,6 +520,7 @@ namespace CodexPulse {
                     if(!string.IsNullOrEmpty(proposed.PriceTablePath)) { string reason;if(PriceBook.Load(proposed,out reason)==null) throw new IOException("模型价格表不可读或格式无效，请检查版本号和模型价格。"); }
                     proposed.BackgroundOpacity=(int)glass.Value;proposed.Theme=chosen;
                     proposed.ClickThroughWhenPinned=clickThrough.IsChecked==true;
+                    proposed.AutoCheckUpdates=automaticUpdates.IsChecked==true;
                     if(auto.IsEnabled) {
                         previous=StartupRegistration.Read();proposed.AutoStart=auto.IsChecked==true;
                         if(proposed.AutoStart?!StartupRegistration.IsEnabled(previous):previous!=null) { StartupRegistration.Set(proposed.AutoStart);startupChanged=true; }

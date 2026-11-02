@@ -12,7 +12,7 @@ function New-VerificationContext {
         & (Join-Path $verificationRepoRoot 'build.ps1') -OutputDirectory $outputRoot | Out-Host
     }
     $framework = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
-    $references = @('System.dll', 'System.Core.dll', 'System.Security.dll', 'System.Xaml.dll', 'System.Web.Extensions.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll') | ForEach-Object { '/r:' + (Join-Path $framework $_) }
+    $references = @('System.dll', 'System.Core.dll', 'System.IO.Compression.dll', 'System.IO.Compression.FileSystem.dll', 'System.Security.dll', 'System.Xaml.dll', 'System.Web.Extensions.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll') | ForEach-Object { '/r:' + (Join-Path $framework $_) }
     $references += @('WindowsBase.dll', 'PresentationCore.dll', 'PresentationFramework.dll') | ForEach-Object { '/r:' + (Join-Path (Join-Path $framework 'WPF') $_) }
     $references += '/r:' + (Join-Path $outputRoot 'CodexPulse.exe')
     return [PSCustomObject]@{

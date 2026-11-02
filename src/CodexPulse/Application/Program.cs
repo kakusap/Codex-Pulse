@@ -25,6 +25,7 @@ namespace CodexPulse {
         static string Option(string[] args,string name) { int i=Array.IndexOf(args,name);return i>=0 && i+1<args.Length?args[i+1]:null; }
         [STAThread] public static void Main(string[] args) {
             try {
+                if(Option(args,"--apply-update")!=null) {Environment.ExitCode=UpdateInstaller.Run(Option(args,"--apply-update"));return;}
                 if(Option(args,"--settings")!=null) { Settings.FilePath=Option(args,"--settings");if(!File.Exists(Settings.FilePath)) throw new IOException("指定的设置文件不存在。"); }
                 var config=Settings.Load();
                 if(Array.IndexOf(args,"--verify-startup")>=0) {
@@ -51,6 +52,7 @@ namespace CodexPulse {
                 var app=new System.Windows.Application { ShutdownMode=ShutdownMode.OnMainWindowClose };
                 app.DispatcherUnhandledException += delegate(object sender,DispatcherUnhandledExceptionEventArgs e) { WriteError(e.Exception);MessageBox.Show("看板遇到错误："+e.Exception.Message,"Codex Pulse");e.Handled=true; };
                 var dashboard=new Dashboard(config);app.MainWindow=dashboard.Window;
+                if(!smoke) dashboard.StartUpdateChecks();
                 // Developer visual check: broad color bands behind the actual HWND.
                 // This is never shown during normal startup.
                 if(Array.IndexOf(args,"--glass-probe")>=0) {
