@@ -14,7 +14,7 @@ namespace CodexPulse {
         public bool Busy { get; private set; }
         public IndependentAccountWindow(Window owner,Settings current,Action<Settings> apply) {
             var settings=Json.New().Deserialize<Settings>(Json.New().Serialize(current));var theme=ThemePalette.Get(settings.Theme);
-            Window=new Window { Title="Codex Pulse · 账号管理",Owner=owner,ShowInTaskbar=false,Width=640,SizeToContent=SizeToContent.Height,MaxHeight=SystemParameters.WorkArea.Height-60,WindowStartupLocation=WindowStartupLocation.CenterScreen,ResizeMode=ResizeMode.NoResize,Background=ThemePalette.Brush(theme.Dialog),Foreground=ThemePalette.Brush(ThemePalette.Text),FontFamily=owner.FontFamily,Topmost=owner.Topmost };
+            Window=new Window { Title="Codex Pulse · 账号管理",Owner=DialogTheme.OwnerFor(owner),ShowInTaskbar=false,Width=640,SizeToContent=SizeToContent.Height,MaxHeight=SystemParameters.WorkArea.Height-60,WindowStartupLocation=WindowStartupLocation.CenterScreen,ResizeMode=ResizeMode.NoResize,Background=ThemePalette.Brush(theme.Dialog),Foreground=ThemePalette.Brush(ThemePalette.Text),FontFamily=owner.FontFamily,Topmost=false };
             DialogTheme.Install(Window,owner,theme);
             var panel=new StackPanel { Margin=new Thickness(22) };Window.Content=new ScrollViewer { Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled };
             panel.Children.Add(Label("独立账号与额度",17));

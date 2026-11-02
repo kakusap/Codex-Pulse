@@ -8,7 +8,7 @@ namespace CodexPulse {
     public static class CostDetailsWindow {
         static TextBlock Text(string value,double size) {return new TextBlock {Text=value,FontSize=size,TextWrapping=TextWrapping.Wrap};}
         public static Window Create(Window owner,ThemePalette theme,LocalCostSummary costs,List<AccountUsage> accounts) {
-            var window=new Window {Title="Codex Pulse · 本机参考费用",Owner=owner,ShowInTaskbar=false,Width=Math.Min(800,SystemParameters.WorkArea.Width-40),Height=Math.Min(740,SystemParameters.WorkArea.Height-50),ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,FontFamily=owner.FontFamily,Topmost=owner.Topmost};
+            var window=new Window {Title="Codex Pulse · 本机参考费用",Owner=DialogTheme.OwnerFor(owner),ShowInTaskbar=false,Width=Math.Min(800,SystemParameters.WorkArea.Width-40),Height=Math.Min(740,SystemParameters.WorkArea.Height-50),ResizeMode=ResizeMode.NoResize,WindowStartupLocation=DialogTheme.OwnerFor(owner)==null?WindowStartupLocation.CenterScreen:WindowStartupLocation.CenterOwner,FontFamily=owner.FontFamily,Topmost=false};
             DialogTheme.Install(window,owner,theme);
             var grid=new Grid {Margin=new Thickness(22)};window.Content=grid;
             grid.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});grid.RowDefinitions.Add(new RowDefinition());grid.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});

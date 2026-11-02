@@ -69,6 +69,7 @@
     <Compile Include="Infrastructure\Windows\Backdrop.cs" />
     <Compile Include="Infrastructure\Windows\MonitorDock.cs" />
     <Compile Include="Infrastructure\Windows\PinInteraction.cs" />
+    <Compile Include="Infrastructure\Windows\OutsideClickDismissal.cs" />
     <Compile Include="Infrastructure\Windows\StartupRegistration.cs" />
     <Compile Include="Presentation\Controls\QuotaDetailsPopup.cs" />
     <Compile Include="Presentation\Controls\QuotaRing.cs" />

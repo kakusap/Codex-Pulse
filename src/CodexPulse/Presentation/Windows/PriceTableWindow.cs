@@ -18,7 +18,7 @@ namespace CodexPulse {
         }
         public static Window Create(Window owner,ThemePalette theme) {
             var book=PriceBook.Builtin();
-            var window=new Window {Title="Codex Pulse · 内置模型价格表",Owner=owner,ShowInTaskbar=false,Width=Math.Min(780,SystemParameters.WorkArea.Width-40),Height=Math.Min(700,SystemParameters.WorkArea.Height-50),ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,FontFamily=owner.FontFamily,Topmost=owner.Topmost,Background=ThemePalette.Brush(theme.Dialog)};
+            var window=new Window {Title="Codex Pulse · 内置模型价格表",Owner=DialogTheme.OwnerFor(owner),ShowInTaskbar=false,Width=Math.Min(780,SystemParameters.WorkArea.Width-40),Height=Math.Min(700,SystemParameters.WorkArea.Height-50),ResizeMode=ResizeMode.NoResize,WindowStartupLocation=DialogTheme.OwnerFor(owner)==null?WindowStartupLocation.CenterScreen:WindowStartupLocation.CenterOwner,FontFamily=owner.FontFamily,Topmost=false,Background=ThemePalette.Brush(theme.Dialog)};
             DialogTheme.Install(window,owner,theme);
             var grid=new Grid {Margin=new Thickness(22)};window.Content=grid;
             grid.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});grid.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});grid.RowDefinitions.Add(new RowDefinition());grid.RowDefinitions.Add(new RowDefinition {Height=GridLength.Auto});

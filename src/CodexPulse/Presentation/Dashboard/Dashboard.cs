@@ -28,6 +28,7 @@ namespace CodexPulse {
         DispatcherTimer timer;
         DispatcherTimer hoverTimer;
         PinInteraction pinInteraction;
+        OutsideClickDismissal outsideClicks;
         PinInteraction accountInteraction,menuInteraction,dragInteraction;
         readonly List<PinInteraction> detailInteractions=new List<PinInteraction>();
         System.Windows.Forms.NotifyIcon tray;
@@ -62,6 +63,10 @@ namespace CodexPulse {
             AccountSwitch.Changed+=delegate { if(!closing) QuickDetails.Refresh(latest,palette); };
             try { Window.Icon=BitmapFrame.Create(new Uri(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"pulse.ico"))); } catch { }
             Window.SourceInitialized += delegate {
+                outsideClicks=new OutsideClickDismissal(Window,()=>!closing && (DetailsExpanded || QuickDetails.IsOpen),delegate {
+                    QuickDetails.Close();
+                    if(DetailsExpanded) ToggleDetails();
+                });
                 BackdropMode=Backdrop.Apply(Window,config.BackgroundOpacity);DockTopCenter();UpdateInteractionMode();
                 var source=HwndSource.FromHwnd(new WindowInteropHelper(Window).Handle);
                 if(source!=null) source.AddHook(delegate(IntPtr hwnd,int message,IntPtr wParam,IntPtr lParam,ref bool handled) {
@@ -100,7 +105,7 @@ namespace CodexPulse {
             };
             Window.Closing += delegate(object sender,CancelEventArgs e) {
                 if(!exitRequested) { e.Cancel=true; MinimizeToTray(); return; }
-                closing=true;QuickDetails.Dispose();SystemParameters.StaticPropertyChanged-=OnDesktopChanged;timer.Stop();hoverTimer.Stop();History.SetPassiveHover(false);pinInteraction.Dispose();accountInteraction.Dispose();menuInteraction.Dispose();dragInteraction.Dispose();foreach(var control in detailInteractions) control.Dispose();tray.Visible=false;tray.Dispose();Save();
+                closing=true;if(outsideClicks!=null) outsideClicks.Dispose();QuickDetails.Dispose();SystemParameters.StaticPropertyChanged-=OnDesktopChanged;timer.Stop();hoverTimer.Stop();History.SetPassiveHover(false);pinInteraction.Dispose();accountInteraction.Dispose();menuInteraction.Dispose();dragInteraction.Dispose();foreach(var control in detailInteractions) control.Dispose();tray.Visible=false;tray.Dispose();Save();
             };
             SetupTray(); UpdatePin();
             timer=new DispatcherTimer { Interval=TimeSpan.FromSeconds(5) };
@@ -385,7 +390,7 @@ namespace CodexPulse {
             var target=Find<Button>("KeyButton");target.ContextMenu=menu;menu.PlacementTarget=target;menu.IsOpen=true;
         }
         public Window CreateSettingsWindow() {
-            var dialog=new Window { Title="Codex Pulse V0.4 设置",ShowInTaskbar=false,Width=570,SizeToContent=SizeToContent.Height,MaxHeight=SystemParameters.WorkArea.Height-60,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterScreen,Owner=Window,Background=Brush(palette.Dialog),Foreground=Brush(ThemePalette.Text),FontFamily=Window.FontFamily,Topmost=Window.Topmost };
+            var dialog=new Window { Title="Codex Pulse V0.4 设置",ShowInTaskbar=false,Width=570,SizeToContent=SizeToContent.Height,MaxHeight=SystemParameters.WorkArea.Height-60,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterScreen,Background=Brush(palette.Dialog),Foreground=Brush(ThemePalette.Text),FontFamily=Window.FontFamily };
             DialogTheme.Install(dialog,Window,palette);
             var panel=new StackPanel { Margin=new Thickness(22) };
             dialog.Content=new ScrollViewer { Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled };
@@ -479,7 +484,7 @@ namespace CodexPulse {
         async void ShowIndependentAccounts() {
             if(managingAccounts || AccountSwitch.Busy || AccountSwitch.Loading || reading) { MessageBox.Show(Window,"正在查询或切换账号，请稍后打开账号管理。");return; }
             managingAccounts=true;QuickDetails.Close();
-            try { new IndependentAccountWindow(Window,config,proposed=> { var updated=Json.New().Deserialize<Settings>(Json.New().Serialize(proposed));updated.Save();config=updated;AccountSwitch.Reset(); }).Window.ShowDialog(); }
+            try { new IndependentAccountWindow(dialogOwner(),config,proposed=> { var updated=Json.New().Deserialize<Settings>(Json.New().Serialize(proposed));updated.Save();config=updated;AccountSwitch.Reset(); }).Window.ShowDialog(); }
             finally { managingAccounts=false; }
             await Refresh();
         }

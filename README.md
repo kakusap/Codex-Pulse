@@ -2,7 +2,7 @@
 
 Windows 桌面 Codex 额度看板。提供多账号额度查询、账号切换、官方 Token 用量与热力图，以及本机参考费用明细。
 
-当前版本：**V0.4.2**。技术栈：**C# / WPF / .NET Framework 4.8 / Windows x64**。
+当前版本：**V0.4.3**。技术栈：**C# / WPF / .NET Framework 4.8 / Windows x64**。
 
 ## 快速开始
 
@@ -51,7 +51,7 @@ Codex-Pulse/
 - [工程架构](docs/architecture.md)：目录职责和代码放置规则。
 - [开发与测试](docs/development.md)：构建、测试、输出目录及资源维护。
 - [模型价格来源](docs/pricing-sources.md)：内置价格的来源与计算口径。
-- [发布记录](docs/releases/v0.4.md) · [开发路线](docs/development-roadmap.md)。
+- [V0.4.3 发布记录](docs/releases/v0.4.3.md) · [V0.4 发布记录](docs/releases/v0.4.md) · [开发路线](docs/development-roadmap.md)。
 
 ## 数据与隐私
 

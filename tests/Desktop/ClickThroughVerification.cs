@@ -29,9 +29,11 @@ internal static class ClickThroughVerification {
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
     [DllImport("user32.dll", SetLastError=true)] static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
     [DllImport("user32.dll", SetLastError=true)] static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
+    [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr hwnd);
 
     static readonly List<string> report = new List<string>();
     static Process probe;
+    static IntPtr probeWindow;
     static string output;
     static bool cleanupFailed;
 
@@ -67,6 +69,8 @@ internal static class ClickThroughVerification {
                     await Task.Delay(150);
                     PlaceAwayFromDesktopBar(dashboard);
                     await StartProbe(dashboard.Window);
+                    await CheckDialogLayers(dashboard, settings);
+                    await CheckOutsideClicks(dashboard);
                     await CheckBarControls(dashboard);
                     await CheckCostDetails(dashboard);
                     await CheckUsageFilter(dashboard);
@@ -196,6 +200,7 @@ internal static class ClickThroughVerification {
                 if(long.TryParse(File.ReadAllText(ready), NumberStyles.Integer, CultureInfo.InvariantCulture, out handle) && handle != 0) {
                     // The probe is a regular window, immediately below our topmost
                     // dashboard. Move it without injecting or synthesizing input.
+                    probeWindow=new IntPtr(handle);
                     Require(SetWindowPos(new IntPtr(handle), IntPtr.Zero, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010), "Could not raise the probe below the dashboard.");
                     await Task.Delay(150);
                     return;
@@ -260,6 +265,84 @@ internal static class ClickThroughVerification {
             Require(dashboard.DetailsExpanded==wasExpanded,"Second ellipsis click must restore the original expanded state.");
         }
         report.Add("PASS: account/period panels toggle during click-through; ellipsis directly expands and collapses usage details without a menu");
+    }
+
+    static async Task CheckDialogLayers(Dashboard dashboard, Settings settings) {
+        dashboard.ToggleClickThrough(); // Allow an active pinned bar as implicit modal owner.
+        foreach(var dialog in new[] {
+            dashboard.CreateSettingsWindow(),
+            new IndependentAccountWindow(dashboard.Window,settings,proposed=>{}).Window,
+            PriceTableWindow.Create(dashboard.Window,ThemePalette.Get(settings.Theme))
+        }) {
+            Exception failure=null;
+            dialog.Loaded+=delegate {
+                dialog.Dispatcher.BeginInvoke(DispatcherPriority.Background,new Action(delegate {
+                    try {
+                        Require(!dialog.Topmost,"Dialog inherits logical topmost: "+dialog.Title);
+                        Require((Backdrop.GetWindowLong(new WindowInteropHelper(dialog).Handle,-20)&8)==0,"Dialog inherits native topmost: "+dialog.Title);
+                        Require(dialog.Owner!=dashboard.Window,"Dialog is owned by the topmost status bar.");
+                        Require(!IsWindowEnabled(new WindowInteropHelper(dashboard.Window).Handle),"Unowned modal dialog must still disable native dashboard input.");
+                        Require(dashboard.Window.Topmost,"Opening a normal dialog must keep the status bar pinned.");
+                    } catch(Exception error) { failure=error; }
+                    finally { dialog.Close(); }
+                }));
+            };
+            dashboard.Window.Activate(); // Exercise ShowDialog's implicit native owner.
+            dialog.ShowDialog();
+            if(failure!=null) throw failure;
+            Require(dashboard.Window.IsEnabled,"Closing a modal dialog must restore dashboard input.");
+        }
+        var parent=dashboard.CreateSettingsWindow();
+        parent.Show();
+        var child=new IndependentAccountWindow(parent,settings,proposed=>{}).Window;
+        Require(child.Owner==parent && !child.Topmost,"Nested account management must retain its normal settings owner.");
+        child.Close();parent.Close();
+        dashboard.ToggleClickThrough();
+        await Task.Delay(80);
+        report.Add("PASS: settings/account/price modal windows are native non-topmost; status bar stays pinned and modal input is restored");
+    }
+
+    // Feed the hook with real native hit-test coordinates, without injecting
+    // input into the user's desktop. WindowFromPoint still runs cross-process.
+    static void ObserveClick(Dashboard dashboard,NativePoint point,int message=0x0201) {
+        var listener=typeof(Dashboard).GetField("outsideClicks",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(dashboard);
+        Require(listener!=null,"Outside click hook was not installed.");
+        var hook=(IntPtr)listener.GetType().GetField("hook",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(listener);
+        Require(hook!=IntPtr.Zero,"Outside click hook has no native handle.");
+        IntPtr data=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(NativePoint)));
+        try {
+            Marshal.StructureToPtr(point,data,false);
+            listener.GetType().GetMethod("OnMouse",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(listener,new object[] {0,new IntPtr(message),data});
+        } finally { Marshal.FreeHGlobal(data); }
+    }
+    static async Task CheckOutsideClicks(Dashboard dashboard) {
+        PlaceAwayFromDesktopBar(dashboard);
+        NativeRect bounds;Require(GetWindowRect(probeWindow,out bounds),"Cannot read independent probe bounds.");
+        var outside=new NativePoint { X=bounds.Right-4,Y=bounds.Bottom-4 };
+        uint target;GetWindowThreadProcessId(WindowFromPoint(outside),out target);
+        Require(target==(uint)probe.Id,"Outside-click sample must hit an independent application.");
+        foreach(bool through in new[] {true,false}) {
+            if(dashboard.IsClickThrough!=through) dashboard.ToggleClickThrough();
+            if(!dashboard.DetailsExpanded) dashboard.ToggleDetails();
+            dashboard.Window.UpdateLayout();
+            var button=dashboard.Find<Button>("PinButton");
+            ObserveClick(dashboard,At("inside pin",button.PointToScreen(new Point(button.ActualWidth/2,button.ActualHeight/2))).Point);
+            await Task.Delay(50);
+            Require(dashboard.DetailsExpanded,"Clicking an app control must keep details open.");
+            dashboard.Find<Button>("PrimaryRingButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var popup=dashboard.QuickDetails.PopupWindow;popup.UpdateLayout();
+            ObserveClick(dashboard,At("inside popup",popup.PointToScreen(new Point(20,20))).Point);
+            await Task.Delay(50);
+            Require(dashboard.QuickDetails.IsOpen && dashboard.DetailsExpanded,"Clicking a detail popup must keep app panels open.");
+            ObserveClick(dashboard,outside,0x0200);await Task.Delay(50);
+            Require(dashboard.DetailsExpanded,"Pointer movement must not dismiss details.");
+            ObserveClick(dashboard,outside,through?0x0201:0x0204);
+            await Task.Delay(80);
+            Require(!dashboard.DetailsExpanded && !dashboard.QuickDetails.IsOpen && dashboard.Window.Height==56,"Outside click must collapse usage and quota panels to the status bar.");
+        }
+        dashboard.ToggleClickThrough();
+        dashboard.ToggleDetails();PlaceAwayFromDesktopBar(dashboard);
+        report.Add("PASS: outside left/right clicks dismiss details with and without click-through; app controls/popups and pointer movement preserve them");
     }
 
     static async Task CheckPassiveHover(Dashboard dashboard) {

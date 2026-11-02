@@ -12,6 +12,9 @@ namespace CodexPulse {
     public static class DialogTheme {
         static readonly DependencyProperty ManagedProperty=DependencyProperty.RegisterAttached("Managed",typeof(bool),typeof(DialogTheme),new PropertyMetadata(false));
         [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
+        // Win32 propagates topmost state through ownership; normal dialogs must
+        // not be owned by the status bar, even while it is currently unpinned.
+        public static Window OwnerFor(Window owner) { return IsManaged(owner)?owner:null; }
         public static bool IsManaged(Window window) { return (bool)window.GetValue(ManagedProperty); }
         public static void Install(Window window,Window owner,ThemePalette theme) {
             if(!IsManaged(window)) {
